@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*- #
-"""
-@created: 21/11/2019
-@author: Julio Lafuente
-@author: DxD
-@version: 1.0
-"""
-
 from elasticsearch import Elasticsearch
 from urllib.parse import unquote
 from io import StringIO
@@ -185,7 +177,7 @@ def get_countries(days, extension, p):
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
         cw.writerow(["portal", "timestamp", "city", "region",
-                     "country", "latitude", "longitude", "visits"])
+                     "country", "visits"])
         for y in x["countries"]:
             cw.writerow([
                 y["portal"],
@@ -193,8 +185,6 @@ def get_countries(days, extension, p):
                 y["city"],
                 y["region"],
                 y["country"],
-                y["latitude"],
-                y["longitude"],
                 y["visits"]])
 
         return si.getvalue()
@@ -249,14 +239,13 @@ def get_files(days, extension, p):
         x = json.loads(json_file)
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
-        cw.writerow(["portal", "path", "timestamp", "extension", "downloads"])
+        cw.writerow(["portal", "event_Count","event_Name" ,"timestamp"])
         for y in x["files"]:
             cw.writerow([
                 y["portal"],
-                y["path"],
                 y["timestamp"],
-                y["extension"],
-                y["downloads"]])
+                y["event_Count"],
+                y["event_Name"]])
 
         return si.getvalue()
 
@@ -269,16 +258,14 @@ def files_response(response):
 
     for hit in response['hits']['hits']:
         browser = {}
-        if 'path' in hit["_source"]:
-            browser['path'] = hit["_source"]['path']
-        if 'extension' in hit["_source"]:
-            browser['extension'] = hit["_source"]['extension']
         if 'portal' in hit["_source"]:
             browser['portal'] = hit["_source"]['portal']
-        if 'downloads' in hit["_source"]:
-            browser['downloads'] = hit["_source"]['downloads']
+        if 'event_Count' in hit["_source"]:
+            browser['event_Count'] = hit["_source"]['event_Count']
         if '@timestamp' in hit["_source"]:
             browser['timestamp'] = hit["_source"]['@timestamp']
+        if 'event_Name' in hit["_source"]:
+            browser['event_Name'] = hit["_source"]['event_Name']
 
         res.append(browser)
 
@@ -323,9 +310,6 @@ def countries_response(response):
             browser['portal'] = hit["_source"]['portal']
         if 'region' in hit["_source"]:
             browser['region'] = hit["_source"]['region']
-        if 'geoip' in hit["_source"]:
-            browser['latitude'] = hit["_source"]['geoip']['location']['lat']
-            browser['longitude'] = hit["_source"]['geoip']['location']['lon']
         if 'visits' in hit["_source"]:
             browser['visits'] = hit["_source"]['visits']
         if '@timestamp' in hit["_source"]:
@@ -358,3 +342,5 @@ def browsers_response(response):
         res.append(browser)
 
     return res
+
+

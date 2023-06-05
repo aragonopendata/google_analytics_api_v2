@@ -292,9 +292,9 @@ def run_export_browsers():
         log.warn("No se ha informado del número de días")
         return "No se ha informado del número de días"
 
-    if portal is None:
+    if not portal:
         log.info("No se ha informado del campo portal, se usa portal=* por defecto")
-        portal = ['*']
+        portal = '*'
 
     res = make_response(
         export_api.get_browsers(days, extension, portal)
@@ -324,9 +324,9 @@ def run_export_files():
         log.warn("No se ha informado del número de días")
         return "No se ha informado del número de días"
 
-    if portal is None:
+    if not portal:
         log.info("No se ha informado del campo portal, se usa portal=* por defecto")
-        portal = ['*']
+        portal = '*'
 
     res = make_response(
         export_api.get_files(days, extension, portal)
@@ -351,14 +351,13 @@ def run_export_pages():
     days = request.args.get("days")
     extension = request.args.get("extension")
     portal = request.args.getlist("portal")
-
     if days is None:
         log.warn("No se ha informado del número de días")
         return "No se ha informado del número de días"
 
-    if portal is None:
+    if not portal:
         log.info("No se ha informado del campo portal, se usa portal=* por defecto")
-        portal = ['*']
+        portal = '*'
 
     res = make_response(
         export_api.get_pages(days, extension, portal)
@@ -388,9 +387,9 @@ def run_export_countries():
         log.warn("No se ha informado del número de días")
         return "No se ha informado del número de días"
 
-    if portal is None:
+    if not portal:
         log.info("No se ha informado del campo portal, se usa portal=* por defecto")
-        portal = ['*']
+        portal = '*'
 
     res = make_response(
         export_api.get_countries(days, extension, portal)

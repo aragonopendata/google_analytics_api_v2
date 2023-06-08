@@ -5,20 +5,20 @@ import json
 import csv
 from app import configuration
 import logging
+import requests
 
 es = Elasticsearch([configuration.ES_HOST])
 log = logging.getLogger('root')
-
+_portals = []
 
 def get_browsers(days, extension, p):
-
-    log.info("Exporting Browsers - Days: " + days +
-             ", Extension: " + extension + ", Portal: " + str(p))
+    #log.info("Exporting Browsers - Days: " + days +
+    #         ", Extension: " + extension + ", Portal: " + str(p))
 
     data = []
 
     for portal in p:
-        try:
+         try:
             response = es.search(
                 index="logstash-reports-browsers-" + portal,
                 scroll='2m',
@@ -36,15 +36,16 @@ def get_browsers(days, extension, p):
 
             sid = response['_scroll_id']
             scroll_size = len(response['hits']['hits'])
-                
             while (scroll_size > 0):
                 data.extend(browsers_response(response))
                 response = es.scroll(scroll_id=sid, scroll='2m')
+
                 sid = response['_scroll_id']
                 scroll_size = len(response['hits']['hits'])
 
-        except:
-            log.info('No index found')
+         except:
+             log.info('No index found')
+    
 
     res = dict(browsers=data)
 
@@ -57,14 +58,15 @@ def get_browsers(days, extension, p):
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
         cw.writerow(["portal", "timestamp", "browser_name",
-                     "platform_name", "visits"])
+                     "platform_name", "visits", "portal_name"])
         for y in x["browsers"]:
             cw.writerow([
                 y["portal"],
                 y["timestamp"],
                 y["browser_name"],
                 y["platform_name"],
-                y["visits"]])
+                y["visits"],
+                y["portal_name"]])
 
         return si.getvalue()
 
@@ -73,8 +75,8 @@ def get_browsers(days, extension, p):
 
 def get_pages(days, extension, p):
 
-    log.info("Exporting Pages - Days: " + days +
-             ", Extension: " + extension + ", Portal: " + str(p))
+    # log.info("Exporting Pages - Days: " + days +
+    #          ", Extension: " + extension + ", Portal: " + str(p))
 
     data = []
 
@@ -117,13 +119,14 @@ def get_pages(days, extension, p):
         x = json.loads(json_file)
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
-        cw.writerow(["portal", "path", "timestamp", "visits"])
+        cw.writerow(["portal", "path", "timestamp", "visits", "portal_name"])
         for y in x["pages"]:
             cw.writerow([
                 y["portal"],
                 y["path"],
                 y["timestamp"],
-                y["visits"]])
+                y["visits"],
+                y["portal_name"]])
 
         return si.getvalue()
 
@@ -132,8 +135,8 @@ def get_pages(days, extension, p):
 
 def get_countries(days, extension, p):
 
-    log.info("Exporting Countries - Days: " + days +
-             ", Extension: " + extension + ", Portal: " + str(p))
+    # log.info("Exporting Countries - Days: " + days +
+    #          ", Extension: " + extension + ", Portal: " + str(p))
         
     data = []
 
@@ -177,7 +180,7 @@ def get_countries(days, extension, p):
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
         cw.writerow(["portal", "timestamp", "city", "region",
-                     "country", "visits"])
+                     "country", "visits", "portal_name"])
         for y in x["countries"]:
             cw.writerow([
                 y["portal"],
@@ -185,7 +188,8 @@ def get_countries(days, extension, p):
                 y["city"],
                 y["region"],
                 y["country"],
-                y["visits"]])
+                y["visits"],
+                y["portal_name"]])
 
         return si.getvalue()
 
@@ -194,8 +198,8 @@ def get_countries(days, extension, p):
 
 def get_files(days, extension, p):
 
-    log.info("Exporting Files - Days: " + days +
-             ", Extension: " + extension + ", Portal: " + str(p))
+    # log.info("Exporting Files - Days: " + days +
+    #          ", Extension: " + extension + ", Portal: " + str(p))
 
     data = []
 
@@ -239,13 +243,14 @@ def get_files(days, extension, p):
         x = json.loads(json_file)
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
-        cw.writerow(["portal", "event_Count","event_Name" ,"timestamp"])
+        cw.writerow(["portal", "event_Count","event_Name" ,"timestamp", "portal_name"])
         for y in x["files"]:
             cw.writerow([
                 y["portal"],
                 y["timestamp"],
                 y["event_Count"],
-                y["event_Name"]])
+                y["event_Name"],
+                y["portal_name"]])
 
         return si.getvalue()
 
@@ -266,6 +271,8 @@ def files_response(response):
             browser['timestamp'] = hit["_source"]['@timestamp']
         if 'event_Name' in hit["_source"]:
             browser['event_Name'] = hit["_source"]['event_Name']
+        if 'view' in hit["_source"]:
+            browser['portal_name'] = get_portal_name(int(hit["_source"]["view"]))
 
         res.append(browser)
 
@@ -290,6 +297,8 @@ def pages_response(response):
             browser['visits'] = hit["_source"]['visits']
         if '@timestamp' in hit["_source"]:
             browser['timestamp'] = hit["_source"]['@timestamp']
+        if 'view' in hit["_source"]:
+            browser['portal_name'] = get_portal_name(int(hit["_source"]["view"]))
 
         res.append(browser)
 
@@ -314,7 +323,9 @@ def countries_response(response):
             browser['visits'] = hit["_source"]['visits']
         if '@timestamp' in hit["_source"]:
             browser['timestamp'] = hit["_source"]['@timestamp']
-
+        if 'view' in hit["_source"]:
+            browser['portal_name'] = get_portal_name(int(hit["_source"]["view"]))
+        print(browser)
         res.append(browser)
 
     return res
@@ -338,9 +349,29 @@ def browsers_response(response):
             browser['visits'] = hit["_source"]['visits']
         if '@timestamp' in hit["_source"]:
             browser['timestamp'] = hit["_source"]['@timestamp']
+        if 'view' in hit["_source"]:
+            browser['portal_name'] = get_portal_name(int(hit["_source"]["view"]))
 
         res.append(browser)
 
     return res
 
+def get_portals():
+    data = requests.get("https://desopendata.aragon.es/aod/services/web/analytics/files")
+    for portal in data.json()["message"]:
+        _portals.append({"id":portal["view"], "name":portal["portal_name"]})
 
+def get_portal_name(view):
+    portal = list(filter(lambda _portal: _portal['id'] == str(view), _portals))
+    if portal:
+        return portal[0]["name"]
+    else:
+        get_portals()
+        portal = list(filter(lambda portal: portal['id'] == str(view), _portals))
+        if portal:
+            return portal[0]["name"]
+        else:
+            return None
+        
+
+get_portals()

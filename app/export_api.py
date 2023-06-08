@@ -58,7 +58,7 @@ def get_browsers(days, extension, p):
         si = StringIO()
         cw = csv.writer(si, delimiter=';')
         cw.writerow(["portal", "timestamp", "browser_name",
-                     "platform_name", "visits", "portal_name"])
+                     "platform_name", "visits", "device","portal_name"])
         for y in x["browsers"]:
             cw.writerow([
                 y["portal"],
@@ -66,6 +66,7 @@ def get_browsers(days, extension, p):
                 y["browser_name"],
                 y["platform_name"],
                 y["visits"],
+                y["device"],
                 y["portal_name"]])
 
         return si.getvalue()

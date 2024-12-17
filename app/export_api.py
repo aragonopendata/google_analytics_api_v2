@@ -358,7 +358,7 @@ def browsers_response(response):
     return res
 
 def get_portals():
-    data = requests.get(configuration.portals_url)
+    data = requests.get(configuration.PORTAL_URL)
     for portal in data.json()["message"]:
         _portals.append({"id":portal["view"], "name":portal["portal_name"]})
 
